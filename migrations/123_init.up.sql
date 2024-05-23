@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS comment_hierarchy (
 );
 
 -- индексы(пытаемся в оптимизацию)
-CREATE INDEX IF NOT EXISTS idx_posts_created_at ONgo r posts(created_at);
+CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at);
 CREATE INDEX IF NOT EXISTS idx_comments_post_id ON comments(post_id);
 CREATE INDEX IF NOT EXISTS idx_comments_created_at ON comments(created_at);
 CREATE INDEX IF NOT EXISTS idx_comment_hierarchy_parent_id ON comment_hierarchy(parent_id);
