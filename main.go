@@ -5,9 +5,13 @@ import (
 	"graphql-comments/graph"
 	"graphql-comments/migrations"
 	"graphql-comments/storage"
+	"syscall"
 
+	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -49,10 +53,31 @@ func main() {
 		KeepAlivePingInterval: 10 * time.Second,
 	})
 
-	// queryCache := lru.New(100)
+	server := &http.Server{
+		Addr:    ":" + cfg.ServerPort,
+		Handler: nil,
+	}
 
-	// srv.SetQueryCache(queryCache)
+	go func() {
+		log.Printf("connect to http://localhost:%s/ for GraphQL playground", cfg.ServerPort)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("could not listen on %s: %v\n", cfg.ServerPort, err)
+		}
+	}()
 
-	log.Printf("connect to http://localhost:%s/ for GraphQL playground", cfg.ServerPort)
-	log.Fatal(http.ListenAndServe(":"+cfg.ServerPort, nil))
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM, syscall.SIGALRM)
+
+	<-stop
+
+	log.Println("уходим красиво, нажми Ctrl+C еще раз, если невтерпеж")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatalf("server forced to shutdown: %v", err)
+	}
+
+	log.Println("server exiting")
 }
